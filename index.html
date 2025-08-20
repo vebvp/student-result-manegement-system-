@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>SRMS — Student Result Management System</title>
+    <meta name="description" content="Modern Student Result Management System for BCA & MCA with semesters, subject management, and local storage." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231f6feb'/%3E%3Ctext x='50' y='62' font-size='46' text-anchor='middle' fill='white' font-family='Inter,Arial,sans-serif'%3ES%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">SR</div>
+        <div class="brand-text">
+          <h1>Student Result Management</h1>
+          <p>BCA & MCA • Modern • Offline</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggle" class="btn btn-ghost" title="Toggle theme" aria-label="Toggle theme">🌗</button>
+        <button id="logoutBtn" class="btn btn-outline" title="Logout">Logout</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="Filters and actions">
+        <section class="card">
+          <h2>Filters</h2>
+          <div class="field">
+            <label for="branchFilter">Branch</label>
+            <select id="branchFilter" aria-label="Choose branch">
+              <option value="">All</option>
+              <option value="BCA">BCA</option>
+              <option value="MCA">MCA</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="semesterFilter">Semester</label>
+            <select id="semesterFilter" aria-label="Choose semester" disabled>
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="divider"></div>
+          <div class="stack gap-sm">
+            <button id="manageSubjectsBtn" class="btn btn-outline w-100">Manage Subjects</button>
+            <button id="addStudentBtn" class="btn w-100">Add Student Result</button>
+          </div>
+        </section>
+
+        
+      </aside>
+
+      <section class="content">
+        <section class="stats">
+          <div class="stat-card">
+            <div class="stat-label">Students</div>
+            <div class="stat-value" id="statStudents">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Average CGPA</div>
+            <div class="stat-value" id="statAverageCgpa">0.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pass Rate</div>
+            <div class="stat-value" id="statPassRate">0%</div>
+          </div>
+        </section>
+
+        <section class="card fill">
+          <div class="content-header">
+            <div class="search">
+              <input id="searchInput" type="search" placeholder="Search by name or roll number" />
+            </div>
+            <div class="actions">
+              <button id="clearAllBtn" class="btn btn-danger btn-ghost" title="Clear all data">Clear All</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table" id="studentsTable">
+              <thead>
+                <tr>
+                  <th>Roll No</th>
+                  <th>Name</th>
+                  <th>Branch</th>
+                  <th>Semester</th>
+                  <th>CGPA</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>© <span id="year"></span> SRMS • Built with HTML, CSS & JavaScript</p>
+    </footer>
+
+    <!-- Modals -->
+    <dialog id="studentModal" class="modal">
+      <form id="studentForm" method="dialog" class="modal-card" novalidate>
+        <header class="modal-header">
+          <h3 id="studentModalTitle">Add Student Result</h3>
+          <button type="button" class="icon-btn" data-close>✕</button>
+        </header>
+        <div class="modal-body">
+          <div class="grid-two">
+            <div class="field">
+              <label for="studentName">Full Name</label>
+              <input id="studentName" name="name" type="text" required maxlength="64" placeholder="e.g., Priya Sharma" />
+              <div class="error" data-error-for="studentName"></div>
+            </div>
+            <div class="field">
+              <label for="rollNo">Roll Number</label>
+              <input id="rollNo" name="rollNo" type="text" required maxlength="24" placeholder="e.g., BCA22-045" />
+              <div class="error" data-error-for="rollNo"></div>
+            </div>
+          </div>
+
+          <div class="grid-two">
+            <div class="field">
+              <label for="studentBranch">Branch</label>
+              <select id="studentBranch" name="branch" required>
+                <option value="">Select</option>
+                <option value="BCA">BCA</option>
+                <option value="MCA">MCA</option>
+              </select>
+              <div class="error" data-error-for="studentBranch"></div>
+            </div>
+            <div class="field">
+              <label for="studentSemester">Semester</label>
+              <select id="studentSemester" name="semester" required disabled>
+                <option value="">Select</option>
+              </select>
+              <div class="error" data-error-for="studentSemester"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Subjects & Marks</label>
+            <div id="subjectsContainer" class="subjects"></div>
+            <div class="error" data-error-for="subjects"></div>
+          </div>
+
+          <div id="computedRow" class="computed-row">
+            <div><strong>Total:</strong> <span id="computedTotal">0</span></div>
+            <div><strong>CGPA:</strong> <span id="computedCgpa">0.00</span></div>
+            <div><strong>Grade:</strong> <span id="computedGrade">-</span></div>
+            <div><strong>Status:</strong> <span id="computedStatus">-</span></div>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button type="submit" class="btn">Save</button>
+          <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="subjectsModal" class="modal">
+      <form id="subjectsForm" method="dialog" class="modal-card" novalidate>
+        <header class="modal-header">
+          <h3>Manage Subjects</h3>
+          <button type="button" class="icon-btn" data-close>✕</button>
+        </header>
+        <div class="modal-body">
+          <div class="grid-two">
+            <div class="field">
+              <label for="subjectsBranch">Branch</label>
+              <select id="subjectsBranch" required>
+                <option value="">Select</option>
+                <option value="BCA">BCA</option>
+                <option value="MCA">MCA</option>
+              </select>
+              <div class="error" data-error-for="subjectsBranch"></div>
+            </div>
+            <div class="field">
+              <label for="subjectsSemester">Semester</label>
+              <select id="subjectsSemester" required disabled>
+                <option value="">Select</option>
+              </select>
+              <div class="error" data-error-for="subjectsSemester"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Subjects</label>
+            <div id="subjectsList" class="subjects-list"></div>
+            <div class="muted small">Min 3, Max 10 subjects. Marks default to 100.</div>
+          </div>
+          <div class="stack gap-sm">
+            <div class="grid-two">
+              <input id="newSubjectName" type="text" placeholder="New subject name" />
+              <button id="addSubjectBtn" type="button" class="btn btn-outline">Add Subject</button>
+            </div>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button type="submit" class="btn">Save</button>
+          <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="detailModal" class="modal">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h3>Result Details</h3>
+          <div class="inline-actions">
+            <button id="printBtn" class="btn btn-outline">Print</button>
+            <button type="button" class="icon-btn" data-close>✕</button>
+          </div>
+        </header>
+        <div class="modal-body" id="detailBody">
+          <!-- Filled by JS -->
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn" data-close>Close</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="script.js" defer></script>
+  </body>
+  </html>
+
+

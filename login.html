@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login — SRMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .login-wrap {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--bg);
+      }
+      .login-card {
+        width: min(420px, 96vw);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 32px;
+      }
+      .login-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .login-brand .logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 700;
+        font-size: 22px;
+        box-shadow: var(--shadow);
+      }
+      .login-brand h1 {
+        margin: 0;
+        font-size: 22px;
+      }
+      .login-brand p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .stack { display: grid; gap: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="login-wrap">
+      <form id="loginForm" class="login-card" novalidate>
+        <div class="login-brand">
+          <div class="logo">SR</div>
+          <div>
+            <h1>SRMS Login</h1>
+            <p>Sign in to continue</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="Username" required />
+          <div class="error" data-error-for="username"></div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Password" required />
+          <div class="error" data-error-for="password"></div>
+        </div>
+        <div class="stack">
+          <button type="submit" class="btn">Login</button>
+        </div>
+      </form>
+    </div>
+    <script>
+      const $ = (s, r=document) => r.querySelector(s);
+      const DEFAULT_CREDENTIALS = { username: 'admin', password: 'admin123' };
+      const CREDS_KEY = 'SRMS_CREDS_V1';
+      const SESSION_KEY = 'SRMS_SESSION';
+      const THEME_KEY = 'SRMS_THEME';
+
+      // Apply saved theme to support light/dark on login page
+      try {
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch {}
+
+      // Initialize default creds if absent
+      try {
+        const cur = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null');
+        if (!cur) localStorage.setItem(CREDS_KEY, JSON.stringify(DEFAULT_CREDENTIALS));
+      } catch { localStorage.setItem(CREDS_KEY, JSON.stringify(DEFAULT_CREDENTIALS)); }
+
+      // Already logged in
+      if (localStorage.getItem(SESSION_KEY)) {
+        location.href = 'index.html';
+      }
+
+      $('#loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        $('.error[data-error-for="username"]').textContent = '';
+        $('.error[data-error-for="password"]').textContent = '';
+
+        const username = $('#username').value.trim();
+        const password = $('#password').value;
+        let valid = true;
+        if (!username) { $('.error[data-error-for="username"]').textContent = 'Required'; valid = false; }
+        if (!password) { $('.error[data-error-for="password"]').textContent = 'Required'; valid = false; }
+        if (!valid) return;
+
+        try {
+          const creds = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null') || DEFAULT_CREDENTIALS;
+          if (username === creds.username && password === creds.password) {
+            const token = Math.random().toString(36).slice(2);
+            const session = { token, username, exp: Date.now() + 24*3600*1000 };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            location.href = 'index.html';
+          } else {
+            $('.error[data-error-for="password"]').textContent = 'Invalid username or password';
+          }
+        } catch {
+          $('.error[data-error-for="password"]').textContent = 'Unexpected error';
+        }
+      });
+    </script>
+  </body>
+  </html>
+
+
