@@ -15,7 +15,7 @@
         background: var(--bg);
       }
       .login-card {
-        width: min(420px, 96vw);
+        width: min(640px, 96vw);
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -52,6 +52,9 @@
         font-size: 13px;
       }
       .stack { display: grid; gap: 12px; }
+      .password-input { position: relative; }
+      .password-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; color: var(--muted); }
+      .password-toggle:hover { color: var(--text); }
     </style>
   </head>
   <body>
@@ -65,13 +68,16 @@
           </div>
         </div>
         <div class="field">
-          <label for="username">Username</label>
-          <input id="username" type="text" placeholder="Username" required />
+          <label for="username">Username (Full Name)</label>
+          <input id="username" type="text" placeholder="Enter your full name exactly" required />
           <div class="error" data-error-for="username"></div>
         </div>
         <div class="field">
           <label for="password">Password</label>
-          <input id="password" type="password" placeholder="Password" required />
+          <div class="password-input">
+            <input id="password" type="password" placeholder="Password" required />
+            <button type="button" id="togglePassword" class="password-toggle" title="Toggle password visibility">👁</button>
+          </div>
           <div class="error" data-error-for="password"></div>
         </div>
         <div class="stack">
@@ -80,11 +86,25 @@
       </form>
     </div>
     <script>
+      // Password toggle functionality - persistent show/hide
+      document.getElementById('togglePassword').addEventListener('click', function(e) {
+        e.preventDefault();
+        const passwordInput = document.getElementById('password');
+        const isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        this.textContent = isHidden ? '🙈' : '👁';
+      });
       const $ = (s, r=document) => r.querySelector(s);
-      const DEFAULT_CREDENTIALS = { username: 'admin', password: 'admin123' };
-      const CREDS_KEY = 'SRMS_CREDS_V1';
-      const SESSION_KEY = 'SRMS_SESSION';
+      const USERS_KEY = 'SRMS_USERS_V2';
+      const SESSION_KEY = 'SRMS_SESSION_V2';
       const THEME_KEY = 'SRMS_THEME';
+
+             // Default users with roles
+       const DEFAULT_USERS = {
+         admin: { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+         teacher: { username: 'teacher', password: 'teacher123', role: 'teacher', name: 'John Teacher', assignedBranches: ['BCA', 'MCA'] },
+         vaibhav: { username: 'vaibhav', password: 'vaibhav123', role: 'student', name: 'Vaibhav Sanjay Patil', rollNo: 'BCA23-001' }
+       };
 
       // Apply saved theme to support light/dark on login page
       try {
@@ -92,23 +112,32 @@
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
       } catch {}
 
-      // Initialize default creds if absent
+      // Initialize users if they don't exist
       try {
-        const cur = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null');
-        if (!cur) localStorage.setItem(CREDS_KEY, JSON.stringify(DEFAULT_CREDENTIALS));
-      } catch { localStorage.setItem(CREDS_KEY, JSON.stringify(DEFAULT_CREDENTIALS)); }
+        const existing = localStorage.getItem(USERS_KEY);
+        if (!existing) {
+          localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
+          console.log('Initialized default users');
+        }
+      } catch (error) {
+        console.error('Error initializing users:', error);
+        localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
+      }
 
       // Already logged in
-      if (localStorage.getItem(SESSION_KEY)) {
-        location.href = 'index.html';
-      }
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        if (session && session.exp > Date.now()) {
+          location.href = 'index.html';
+        }
+      } catch {}
 
       $('#loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
         $('.error[data-error-for="username"]').textContent = '';
         $('.error[data-error-for="password"]').textContent = '';
 
-        const username = $('#username').value.trim();
+        const username = $('#username').value;  // Don't trim - username might have spaces
         const password = $('#password').value;
         let valid = true;
         if (!username) { $('.error[data-error-for="username"]').textContent = 'Required'; valid = false; }
@@ -116,16 +145,34 @@
         if (!valid) return;
 
         try {
-          const creds = JSON.parse(localStorage.getItem(CREDS_KEY) || 'null') || DEFAULT_CREDENTIALS;
-          if (username === creds.username && password === creds.password) {
-            const token = Math.random().toString(36).slice(2);
-            const session = { token, username, exp: Date.now() + 24*3600*1000 };
-            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-            location.href = 'index.html';
-          } else {
-            $('.error[data-error-for="password"]').textContent = 'Invalid username or password';
+          const users = JSON.parse(localStorage.getItem(USERS_KEY) || 'null') || DEFAULT_USERS;
+          console.log('Attempting login with username:', username);
+          console.log('Available users:', Object.keys(users));
+          
+          const user = users[username];
+          if (!user) {
+            console.log('User not found');
+            $('.error[data-error-for="username"]').textContent = 'Username not found. Use your exact full name.';
+            return;
           }
-        } catch {
+          
+          if (user.password !== password) {
+            console.log('Invalid password');
+            $('.error[data-error-for="password"]').textContent = 'Invalid password';
+            return;
+          }
+
+          // Login successful
+          const session = { 
+            username, 
+            role: user.role, 
+            name: user.name,
+            exp: Date.now() + 24*3600*1000 
+          };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+          location.href = 'index.html';
+        } catch (error) {
+          console.error('Login error:', error);
           $('.error[data-error-for="password"]').textContent = 'Unexpected error';
         }
       });
