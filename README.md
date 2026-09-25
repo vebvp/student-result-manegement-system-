@@ -148,16 +148,21 @@ SRMS/
 ## 🔐 Security & Permissions
 
 ### Authentication System
-- **Multi-factor Security**: Username/password validation
+- **Browser-only login**: Username/password validation for this local demo
 - **Session Expiry**: Automatic logout after 24 hours
-- **Secure Storage**: Encrypted local storage
-- **Access Control**: Role-based permissions
+- **Local Storage**: Accounts and result data remain in the browser on this device
+- **Role-based Interface**: Each role is shown only its intended records
 
 ### Data Protection
 - **Input Validation**: Comprehensive data checking
 - **XSS Prevention**: HTML escaping
 - **Duplicate Prevention**: Unique constraint enforcement
 - **Data Integrity**: Consistent data validation
+
+> This frontend-only project is not appropriate for real student records: local
+> storage and browser-side role checks can be altered by the device user. A
+> production deployment needs a protected backend/database and server-enforced
+> authentication and permissions.
 
 ## 🚀 Getting Started
 
